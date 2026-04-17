@@ -101,5 +101,3 @@ Total Consumed : 38
 ## Authors
 
 - [Hasan Waseem](https://github.com/hasanwaseem)
-- [Anas Khan](https://github.com/anaskhan)
-- [Areeb Saeed](https://github.com/areebsaeed)
