@@ -1,5 +1,9 @@
 #include <stdio.h>
+#include <pthread.h>
 #include "buffer.h"
+
+// separate mutex just for printing so log + buffer always print together
+static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int buffer[BUFFER_SIZE];
 int in = 0;
@@ -20,14 +24,14 @@ void init_buffer() {
 }
 
 void insert_item(int item) {
-    sem_wait(&empty_slots);       // wait if buffer is full
+    sem_wait(&empty_slots);        // wait if buffer is full
     pthread_mutex_lock(&mutex);
 
     buffer[in] = item;
-    in = (in + 1) % BUFFER_SIZE; // circular buffer
+    in = (in + 1) % BUFFER_SIZE;  // circular buffer
 
     pthread_mutex_unlock(&mutex);
-    sem_post(&full_slots);        // signal that a new item is ready
+    sem_post(&full_slots);         // signal that a new item is ready
 }
 
 int remove_item() {
@@ -44,7 +48,10 @@ int remove_item() {
     return item;
 }
 
-void print_buffer() {
+// prints the log message and buffer state together in one locked block
+void log_and_print(const char *msg) {
+    pthread_mutex_lock(&print_mutex);
+    printf("%s", msg);
     printf("Buffer: [");
     for (int i = 0; i < BUFFER_SIZE; i++) {
         if (buffer[i] == -1)
@@ -54,4 +61,5 @@ void print_buffer() {
         if (i < BUFFER_SIZE - 1) printf(" |");
     }
     printf(" ]\n");
+    pthread_mutex_unlock(&print_mutex);
 }

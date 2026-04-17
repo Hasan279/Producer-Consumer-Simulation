@@ -6,19 +6,17 @@
 
 #define BUFFER_SIZE 5
 
-// the shared buffer and its index
 extern int buffer[BUFFER_SIZE];
-extern int in;   // producer puts item here
-extern int out;  // consumer takes item from here
+extern int in;
+extern int out;
 
-// mutex and semaphores
 extern pthread_mutex_t mutex;
-extern sem_t empty_slots;  // how many empty slots are left
-extern sem_t full_slots;   // how many full slots are ready
+extern sem_t empty_slots;
+extern sem_t full_slots;
 
 void init_buffer();
 void insert_item(int item);
 int remove_item();
-void print_buffer();
+void log_and_print(const char *msg);
 
 #endif

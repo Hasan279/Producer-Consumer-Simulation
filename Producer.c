@@ -13,7 +13,6 @@ void *producer(void *arg) {
         int item = rand() % 100; // random item between 0-99
         insert_item(item);
         log_produced(id, item);
-        print_buffer();
 
         sleep(rand() % 2 + 1); // sleep 1 or 2 seconds (variable rate)
     }
