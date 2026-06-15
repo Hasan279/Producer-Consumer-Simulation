@@ -7,9 +7,15 @@
 #define BUFFER_SIZE 5
 #define BUFFER_EMPTY (-1)
 
+typedef struct {
+    int service_id;
+    char log_level[8];
+    char message[64];
+} LogMessage;
+
 extern volatile int running;
 
-extern int buffer[BUFFER_SIZE];
+extern LogMessage buffer[BUFFER_SIZE];
 extern int in;
 extern int out;
 
@@ -20,6 +26,5 @@ extern sem_t full_slots;
 void init_buffer(void);
 void produce_item(int producer_id);
 void consume_item(int consumer_id);
-void log_and_print(const char *msg);
 
 #endif

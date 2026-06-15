@@ -18,10 +18,10 @@ int main()
 {
     srand((unsigned int)time(NULL));
 
-    printf("simulations\n");
+    printf("=== Asynchronous Multi-Threaded Log Ingestion Pipeline ===\n\n");
 
     // 2 prods
-    printf("2 prods\n");
+    printf("Running: 2 Services generating logs\n");
     total_produced = 0;
     total_consumed = 0;
     running = 1;

@@ -2,13 +2,13 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include "buffer.h"
 #include "logger.h"
 
-static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t operation_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-int buffer[BUFFER_SIZE];
+LogMessage buffer[BUFFER_SIZE];
 int in = 0;
 int out = 0;
 
@@ -20,7 +20,7 @@ void init_buffer(void)
 {
     for (int i = 0; i < BUFFER_SIZE; i++)
     {
-        buffer[i] = BUFFER_EMPTY;
+        buffer[i].service_id = BUFFER_EMPTY;
     }
 
     pthread_mutex_init(&mutex, NULL);
@@ -30,7 +30,20 @@ void init_buffer(void)
 
 void produce_item(int producer_id)
 {
-    int item = rand() % 100;
+    LogMessage item;
+    item.service_id = producer_id;
+
+    int rand_val = rand() % 100;
+    if (rand_val < 75) {
+        strcpy(item.log_level, "INFO");
+        strcpy(item.message, "User login successful");
+    } else if (rand_val < 95) {
+        strcpy(item.log_level, "WARN");
+        strcpy(item.message, "Database connection pool low");
+    } else {
+        strcpy(item.log_level, "ERROR");
+        strcpy(item.message, "API request failed");
+    }
 
     sem_wait(&empty_slots);
     if (!running) {
@@ -42,11 +55,16 @@ void produce_item(int producer_id)
 
     buffer[in] = item;
     in = (in + 1) % BUFFER_SIZE;
+    
+    int full_count = 0;
+    for (int i = 0; i < BUFFER_SIZE; i++) {
+        if (buffer[i].service_id != BUFFER_EMPTY) full_count++;
+    }
 
     pthread_mutex_unlock(&mutex);
     sem_post(&full_slots);
 
-    log_produced(producer_id, item);
+    log_produced(item, full_count);
     sleep(1);
     pthread_mutex_unlock(&operation_mutex);
 }
@@ -61,38 +79,19 @@ void consume_item(int consumer_id)
     pthread_mutex_lock(&operation_mutex);
     pthread_mutex_lock(&mutex);
 
-    int item = buffer[out];
-    buffer[out] = BUFFER_EMPTY;
+    LogMessage item = buffer[out];
+    buffer[out].service_id = BUFFER_EMPTY;
     out = (out + 1) % BUFFER_SIZE;
+
+    int full_count = 0;
+    for (int i = 0; i < BUFFER_SIZE; i++) {
+        if (buffer[i].service_id != BUFFER_EMPTY) full_count++;
+    }
 
     pthread_mutex_unlock(&mutex);
     sem_post(&empty_slots);
 
-    log_consumed(consumer_id, item);
+    log_consumed(consumer_id, item, full_count);
     sleep(1);
     pthread_mutex_unlock(&operation_mutex);
-}
-
-void log_and_print(const char *msg)
-{
-    pthread_mutex_lock(&print_mutex);
-    printf("%s", msg);
-    printf("Buffer: [");
-    for (int i = 0; i < BUFFER_SIZE; i++)
-    {
-        if (buffer[i] == BUFFER_EMPTY)
-        {
-            printf(" -");
-        }
-        else
-        {
-            printf("%2d", buffer[i]);
-        }
-        if (i < BUFFER_SIZE - 1)
-        {
-            printf(" |");
-        }
-    }
-    printf(" ]\n");
-    pthread_mutex_unlock(&print_mutex);
 }
